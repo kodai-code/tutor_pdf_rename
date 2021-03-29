@@ -1,13 +1,18 @@
 # チューター用 PDF化した模試のリネームソフトウェア
 
+import glob
 import io
 import os
+import shutil
 # import queue
 from pathlib import Path
-import glob
+
 import PySimpleGUI as sg
 from pdf2image import convert_from_path
 from PIL import Image, ImageTk
+
+# 別ファイルの模試等リスト
+import name_list
 
 
 # パスの冗長性に使う関数
@@ -71,11 +76,19 @@ def load_image(path, window):
 
 
 def rename_file(year, school, exam, subject, qa, bef_path):
-    # aft_pathについて階層の振り分けを実装する必要あり(2021/03/29)
-    # "PDF化した模試"のディレクトリを事前に内部で設定しておく等
-    
-    aft_path = f'./{year}_{school}_{exam}_{subject}_{qa}.pdf'
-    os.rename(bef_path, aft_path)
+    # # aft_pathについて階層の振り分けを実装する必要あり(2021/03/29)
+    # # "PDF化した模試"のディレクトリを事前に内部で設定しておく等
+
+    # # "PDF化した模試"のディレクトリ(仮)
+    # dig_path = resource_path('./PDF化した模試')
+    # # 階層分けを行う
+    # os.mkdir(dig_path+f'{year}/{}')
+
+    # # 移動後の新しいPDFのパスを格納(~/xxxx.pdf)
+    # dst_path = shutil.move(bef_path, dig_path)
+
+    # new_name = resource_path(f'./{year}_{school}_{exam}_{subject}_{qa}.pdf')
+    # os.rename(bef_path, aft_path)
 
     title = window['title']
     title.Update(f'"{year}_{school}_{exam}_{subject}_{qa}"に変更完了。')
@@ -100,10 +113,10 @@ sg.LOOK_AND_FEEL_TABLE['MyNewTheme'] = {
 
 sg.theme('MyNewTheme')
 
-year_list = ['2021', '2020', '2019']
-school_list = ['Z会', 'ベネッセ', '河合塾', '駿台', '代ゼミ', '北九州予備校']
-exam_list = ['Z会共通テスト実践模試', 'センターKパック', '全統マーク', '全統記述']
-subject_list = ['国語', '数1A', '数2B', '英語(記述)', '英語(リスニング)', '世界史']
+year_list = name_list.year_list
+school_list = name_list.school_list
+exam_list = []
+subject_list = name_list.subject_list
 
 YuGo = '游ゴシック'
 T_setting = {'font': YuGo, 'size': (8, 1)}
@@ -123,7 +136,7 @@ file_line = [sg.T('ファイル', **T_setting),
 year_line = [sg.T('年度', **T_setting),
              sg.Combo(year_list, default_value='2021', size=(10, 1), font=YuGo, readonly=True, key='year')]
 school_line = [sg.T('予備校名', **T_setting), sg.Combo(school_list,
-                                                   size=(10, 1), font=YuGo, readonly=True, key='school')]
+                                                   size=(10, 1), font=YuGo, readonly=True, key='school', enable_events=True)]
 exam_line = [sg.T('模試名', **T_setting),
              sg.Combo(exam_list, size=(20, 1), font=YuGo, readonly=True, key='exam')]
 subject_line = [sg.T('科目名', **T_setting), sg.Combo(subject_list,
@@ -158,6 +171,12 @@ while True:
         if images:
             load_image(images[0], window)
 
+    if event == 'school':
+        exam_list = name_list.divide_exam(values['school'])
+        window['exam'].Update('')
+        window['exam'].Update(values=exam_list)
+
+    # リネーム処理への移行
     if event == 'OK':
         qa = '問題' if values['que'] else '解答'
 
