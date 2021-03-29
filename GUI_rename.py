@@ -19,6 +19,8 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # レイアウト生成時の初期画像のための画像関数
+
+
 def get_img_data(f, maxsize=(300, 300), first=True):
     img = Image.open(f)
     img.thumbnail(maxsize)
@@ -33,7 +35,8 @@ def get_img_data(f, maxsize=(300, 300), first=True):
 # PDFのパスを受け取ってJPEGに変換する関数
 def pdf_to_jpeg(pdf_file_path):
     # poppler/binを環境変数PATHに追加する
-    poppler_dir = Path(__file__).parent.absolute() / resource_path('./poppler/bin')
+    poppler_dir = Path(__file__).parent.absolute() / \
+        resource_path('./poppler/bin')
     os.environ["PATH"] += os.pathsep + str(poppler_dir)
 
     # PDFファイルのパス
@@ -56,6 +59,7 @@ def parse_folder(pdf_name):
     images = glob.glob(resource_path(f'./image_file/{pdf_name}*.jpg'))
     return images
 
+
 def load_image(path, window):
     try:
         image = Image.open(path)
@@ -65,9 +69,15 @@ def load_image(path, window):
     except:
         print(f"{path}が開けません。もう一度やり直してください。")
 
+
+def file_rename(year, school, exam, subject, qa):
+    title = window['title']
+    title.Update(f'"{year}_{school}_{exam}_{subject}_{qa}"に変更完了。')
+
 # q = queue.Queue()
 
 
+# PySimpleGuiの設定
 sg.LOOK_AND_FEEL_TABLE['MyNewTheme'] = {
     'BACKGROUND': '#2f3640',
     'TEXT': '#dcdde1',
@@ -92,12 +102,13 @@ YuGo = '游ゴシック'
 T_setting = {'font': YuGo, 'size': (8, 1)}
 
 
-image_line = [sg.Image(data=get_img_data(resource_path('./B5_sample.png')), key='image'), sg.Output(key='queue')]
+image_line = [sg.Image(data=get_img_data(resource_path(
+    './B5_sample.png')), key='image'), sg.Output(key='queue')]
 pn_line = [sg.T(size=(3, 1)), sg.Button('Prev', size=(6, 1)),
            sg.T(size=(2, 1)), sg.Button('Next', size=(6, 1))]
 
-title_line = [sg.T('タイトル', **T_setting),
-              sg.T('xxxxx_xxxxx_xxxxx_xxxxx_xxxxx', font=YuGo)]
+# title_line = [sg.T('タイトル', **T_setting),
+#               sg.T('xxxxx_xxxxx_xxxxx_xxxxx_xxxxx', font=YuGo, key='title')]
 file_line = [sg.T('ファイル', **T_setting),
              sg.InputText(font=YuGo, readonly=True,
                           enable_events=True, key='browse_files'),
@@ -111,11 +122,12 @@ exam_line = [sg.T('模試名', **T_setting),
 subject_line = [sg.T('科目名', **T_setting), sg.Combo(subject_list,
                                                    size=(20, 1), font=YuGo, readonly=True, key='subject')]
 qa_line = [sg.T('問題/解答', **T_setting),
-           sg.Radio('問題', group_id='QA', default=True, font=YuGo),
-           sg.Radio('解答', group_id='QA', font=YuGo)]
-ok_line = [sg.Button('OK', size=(6, 1))]
+           sg.Radio('問題', group_id='QA', default=True, font=YuGo, key='que'),
+           sg.Radio('解答', group_id='QA', font=YuGo, key='ans')]
+ok_line = [sg.Button('OK', size=(8, 1)), sg.T(
+    ''), sg.T('', font=YuGo, size=(47, 1), key='title')]
 
-layout = [image_line, pn_line, file_line, title_line, year_line,
+layout = [image_line, pn_line, file_line, year_line,
           school_line, exam_line, subject_line, qa_line, ok_line]
 
 
@@ -138,7 +150,13 @@ while True:
             images = parse_folder(contain[backplace+1:-4])
         if images:
             load_image(images[0], window)
-    
+
+    if event == 'OK':
+        qa = '問題' if values['que'] else '解答'
+
+        file_rename(values['year'], values['school'],
+                    values['exam'], values['subject'], qa)
+
     # Nextボタン
     if event == "Next" and images:
         if location == len(images) - 1:
