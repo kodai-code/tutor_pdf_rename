@@ -70,9 +70,16 @@ def load_image(path, window):
         print(f"{path}が開けません。もう一度やり直してください。")
 
 
-def file_rename(year, school, exam, subject, qa):
+def rename_file(year, school, exam, subject, qa, bef_path):
+    # aft_pathについて階層の振り分けを実装する必要あり(2021/03/29)
+    # "PDF化した模試"のディレクトリを事前に内部で設定しておく等
+    
+    aft_path = f'./{year}_{school}_{exam}_{subject}_{qa}.pdf'
+    os.rename(bef_path, aft_path)
+
     title = window['title']
     title.Update(f'"{year}_{school}_{exam}_{subject}_{qa}"に変更完了。')
+
 
 # q = queue.Queue()
 
@@ -154,8 +161,8 @@ while True:
     if event == 'OK':
         qa = '問題' if values['que'] else '解答'
 
-        file_rename(values['year'], values['school'],
-                    values['exam'], values['subject'], qa)
+        rename_file(values['year'], values['school'],
+                    values['exam'], values['subject'], qa, path)
 
     # Nextボタン
     if event == "Next" and images:
