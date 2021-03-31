@@ -59,6 +59,7 @@ def pdf_to_jpeg(pdf_file_path):
         page.save(str(image_path), "JPEG")
 
 
+
 # 画像ファイルを見つける関数
 def parse_folder(pdf_name):
     images = glob.glob(resource_path(f'./image_file/{pdf_name}*.jpg'))
