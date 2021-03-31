@@ -23,9 +23,8 @@ def resource_path(relative_path):
         base_path = os.path.dirname(__file__)
     return os.path.join(base_path, relative_path)
 
+
 # レイアウト生成時の初期画像のための画像関数
-
-
 def get_img_data(f, maxsize=(300, 300), first=True):
     img = Image.open(f)
     img.thumbnail(maxsize)
@@ -57,8 +56,7 @@ def pdf_to_jpeg(pdf_file_path):
         image_path = image_dir / file_name
         # JPEGで保存
         page.save(str(image_path), "JPEG")
-
-
+    
 
 # 画像ファイルを見つける関数
 def parse_folder(pdf_name):
@@ -97,8 +95,7 @@ def rename_file(year, school, exam, subject, qa, bef_path, output_dir):
     title = window['title']
     title.Update(f'"{year}_{school}_{exam}_{subject}_{qa}"に変更完了。')
 
-
-# q = queue.Queue()
+    # q = queue.Queue()
 
 
 # PySimpleGuiの設定
@@ -131,9 +128,9 @@ pn_line = [sg.T(size=(3, 1)), sg.Button('Prev', size=(6, 1)),
            sg.T(size=(2, 1)), sg.Button('Next', size=(6, 1))]
 
 file_line = [sg.T('ファイル', **T_setting),
-             sg.InputText(font=YuGo, readonly=True, size=(41, 1),
+             sg.InputText(font=YuGo, readonly=True,
                           enable_events=True, key='browse_files'),
-             sg.FilesBrowse('選択', font=(YuGo, 10), size=(6, 1)), sg.FolderBrowse('A', font=(YuGo, 10), size=(2, 1), key='output_dir')]
+             sg.FilesBrowse('選択', font=(YuGo, 10), size=(6, 1))]
 year_line = [sg.T('年度', **T_setting),
              sg.Combo(year_list, default_value='2021', size=(10, 1), font=YuGo, readonly=True, key='year')]
 school_line = [sg.T('予備校名', **T_setting), sg.Combo(school_list,
@@ -145,8 +142,8 @@ subject_line = [sg.T('科目名', **T_setting), sg.Combo(subject_list,
 qa_line = [sg.T('問題/解答', **T_setting),
            sg.Radio('問題', group_id='QA', default=True, font=YuGo, key='que'),
            sg.Radio('解答', group_id='QA', font=YuGo, key='ans')]
-ok_line = [sg.Button('OK', size=(8, 1)), sg.T(
-    ''), sg.T('', font=YuGo, size=(47, 1), key='title')]
+ok_line = [sg.Button('OK', size=(8, 1)), sg.T(font=YuGo, size=(40, 1), key='title'),
+           sg.FolderBrowse('出力先設定', font=(YuGo, 10), size=(9, 1), key='output_dir', button_color=('white', 'green'), initial_folder='R:\PDF化した模試')]
 
 layout = [image_line, pn_line, file_line, year_line,
           school_line, exam_line, subject_line, qa_line, ok_line]
@@ -156,47 +153,54 @@ window = sg.Window('PDF化した模試のリネーム', layout)
 images = []
 location = 0
 
-while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED:
-        break
-    if event == 'browse_files':
-        path = values['browse_files']
-        path_list = path.split(';')
-        for contain in path_list:
-            pdf_to_jpeg(contain)
-            backplace = contain.rfind('/')
-            print(contain[backplace+1:])
+def main():
+    try:
+        while True:
+            event, values = window.read()
+            if event == sg.WIN_CLOSED:
+                break
+            if event == 'browse_files':
+                path = values['browse_files']
+                path_list = path.split(';')
+                for contain in path_list:
+                    pdf_to_jpeg(contain)
+                    backplace = contain.rfind('/')
+                    print(contain[backplace+1:])
 
-            images = parse_folder(contain[backplace+1:-4])
-        if images:
-            load_image(images[0], window)
+                    images = parse_folder(contain[backplace+1:-4])
+                if images:
+                    load_image(images[0], window)
 
-    if event == 'school':
-        exam_list = name_list.divide_exam(values['school'])
-        window['exam'].Update('')
-        window['exam'].Update(values=exam_list)
+            if event == 'school':
+                exam_list = name_list.divide_exam(values['school'])
+                window['exam'].Update('')
+                window['exam'].Update(values=exam_list)
 
-    # リネーム処理への移行
-    if event == 'OK':
-        qa = '問題' if values['que'] else '解答'
+            # リネーム処理への移行
+            if event == 'OK':
+                qa = '問題' if values['que'] else '解答'
 
-        rename_file(values['year'], values['school'],
-                    values['exam'], values['subject'], qa, path, values['output_dir'])
+                rename_file(values['year'], values['school'],
+                            values['exam'], values['subject'], qa, path, values['output_dir'])
 
-    # Nextボタン
-    if event == "Next" and images:
-        if location == len(images) - 1:
-            location = 0
-        else:
-            location += 1
-        load_image(images[location], window)
-    # Prevボタン
-    if event == "Prev" and images:
-        if location == 0:
-            location = len(images) - 1
-        else:
-            location -= 1
-        load_image(images[location], window)
+            # Nextボタン
+            if event == "Next" and images:
+                if location == len(images) - 1:
+                    location = 0
+                else:
+                    location += 1
+                load_image(images[location], window)
+            # Prevボタン
+            if event == "Prev" and images:
+                if location == 0:
+                    location = len(images) - 1
+                else:
+                    location -= 1
+                load_image(images[location], window)
 
-window.close()
+        window.close()
+    except:
+        main()
+
+if __name__ == '__main__':
+    main()
