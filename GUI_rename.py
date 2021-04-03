@@ -4,7 +4,7 @@ import glob
 import io
 import os
 import shutil
-# import queue
+import queue
 from pathlib import Path
 
 import PySimpleGUI as sg
@@ -13,6 +13,9 @@ from PIL import Image, ImageTk
 
 # 別ファイルの模試等リスト
 import name_list
+
+
+q = queue.Queue()
 
 
 # パスの冗長性に使う関数
@@ -95,8 +98,6 @@ def rename_file(year, school, exam, subject, qa, bef_path, output_dir):
     title = window['title']
     title.Update(f'"{year}_{school}_{exam}_{subject}_{qa}"に変更完了。')
 
-    # q = queue.Queue()
-
 
 # PySimpleGuiの設定
 sg.LOOK_AND_FEEL_TABLE['MyNewTheme'] = {
@@ -150,11 +151,12 @@ layout = [image_line, pn_line, file_line, year_line,
 
 
 window = sg.Window('PDF化した模試のリネーム', layout)
-images = []
-location = 0
+
 
 def main():
     try:
+        images = []
+        location = 0
         while True:
             event, values = window.read()
             if event == sg.WIN_CLOSED:
@@ -167,6 +169,9 @@ def main():
                     backplace = contain.rfind('/')
                     print(contain[backplace+1:])
 
+                    # q.put(contain)
+                    # # print(q.get())
+
                     images = parse_folder(contain[backplace+1:-4])
                 if images:
                     load_image(images[0], window)
@@ -178,7 +183,16 @@ def main():
 
             # リネーム処理への移行
             if event == 'OK':
+                # if not q.empty():             
                 qa = '問題' if values['que'] else '解答'
+
+                if values['output_dir'] == '':
+                    sub_window = sg.Window('Sub', layout=[[sg.T('出力先を設定してください')]])
+                    while True:
+                        sub_event, sub_value = sub_window.read()
+
+                        if sub_event is None:
+                            break
 
                 rename_file(values['year'], values['school'],
                             values['exam'], values['subject'], qa, path, values['output_dir'])
